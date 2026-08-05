@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>비버 챌린지 · 나무 갉기 대회 — 1등과 2등을 가리는 최소 대결 수</title>
+<style>
+  :root{
+    --ink:#101828; --ink-2:#475467; --ink-3:#98a2b3;
+    --paper:#f6f7fb; --card:#ffffff; --line:#e4e7ec;
+    --gold:#b45309; --gold-bg:#fffbeb; --gold-line:#fcd34d;
+    --indigo:#4338ca; --indigo-bg:#eef2ff; --indigo-line:#c7d2fe;
+    --green:#047857; --green-bg:#ecfdf5; --green-line:#a7f3d0;
+    --red:#b42318; --red-bg:#fef3f2; --red-line:#fecdca;
+    --font:-apple-system,'Pretendard','Apple SD Gothic Neo','Malgun Gothic','맑은 고딕',sans-serif;
+    --math:'Cambria Math','Latin Modern Math','Times New Roman',serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;font-family:var(--font)}
+  body{background:var(--paper);color:var(--ink);padding:18px 10px 60px;display:flex;justify-content:center}
+  .wrap{width:100%;max-width:1120px}
+
+  /* ---------- 로그인 ---------- */
+  #gate{position:fixed;inset:0;background:rgba(16,24,40,.62);backdrop-filter:blur(3px);
+        display:flex;align-items:center;justify-content:center;z-index:500;padding:16px}
+  .gate-card{background:#fff;border-radius:18px;padding:28px;max-width:420px;width:100%;
+             box-shadow:0 24px 60px rgba(16,24,40,.28)}
+  .gate-card h2{font-size:1.25rem;margin-bottom:6px}
+  .gate-card p{color:var(--ink-2);font-size:.9rem;line-height:1.55;margin-bottom:18px}
+  .field{margin-bottom:12px}
+  .field label{display:block;font-weight:700;font-size:.85rem;margin-bottom:5px}
+  .field input{width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:1rem}
+  .field input:focus{outline:none;border-color:var(--indigo)}
+  .gate-msg{color:var(--red);font-size:.85rem;min-height:20px;margin-bottom:6px}
+
+  /* ---------- 헤더 ---------- */
+  .top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .eyebrow{display:inline-block;background:var(--indigo);color:#fff;font-size:.72rem;font-weight:800;
+           letter-spacing:.06em;padding:5px 11px;border-radius:999px}
+  h1{font-size:1.35rem;line-height:1.35;margin-top:8px;letter-spacing:-.02em}
+  .who{background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:8px 14px;font-size:.85rem;font-weight:700}
+  .who span{color:var(--ink-3);font-weight:600}
+  .who b{color:var(--indigo)}
+
+  .tabs{display:flex;gap:8px;margin:14px 0;flex-wrap:wrap}
+  .tab{padding:9px 16px;border-radius:11px;border:1.5px solid var(--line);background:#fff;
+       font-weight:700;font-size:.9rem;cursor:pointer;color:var(--ink-2)}
+  .tab.on{border-color:var(--indigo);background:var(--indigo-bg);color:var(--indigo)}
+  .tab:focus-visible{outline:3px solid var(--indigo-line);outline-offset:2px}
+
+  .quest{background:var(--indigo-bg);border-left:5px solid var(--indigo);border-radius:0 12px 12px 0;
+         padding:14px 16px;font-weight:700;color:#1e1b4b;line-height:1.55;margin-bottom:16px}
+
+  /* ---------- 단계 레일 ---------- */
+  .rail{display:flex;gap:0;background:#fff;border:1.5px solid var(--line);border-radius:14px;
+        overflow:hidden;margin-bottom:16px}
+  .rail-step{flex:1;padding:11px 10px;text-align:center;font-size:.82rem;font-weight:700;color:var(--ink-3);
+             border-right:1px solid var(--line);position:relative}
+  .rail-step:last-child{border-right:none}
+  .rail-step .n{display:inline-flex;width:20px;height:20px;border-radius:50%;background:var(--line);color:#fff;
+                align-items:center;justify-content:center;font-size:.72rem;margin-right:6px}
+  .rail-step.on{color:var(--indigo);background:var(--indigo-bg)}
+  .rail-step.on .n{background:var(--indigo)}
+  .rail-step.done{color:var(--green)}
+  .rail-step.done .n{background:var(--green)}
+
+  .panel{background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:18px;margin-bottom:14px}
+  .panel.locked{opacity:.45;pointer-events:none}
+  .panel-head{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+  .panel-head h2{font-size:1.02rem;letter-spacing:-.01em}
+  .chip{font-size:.72rem;font-weight:800;padding:3px 9px;border-radius:999px}
+  .chip.wait{background:#f2f4f7;color:var(--ink-3)}
+  .chip.now{background:var(--indigo-bg);color:var(--indigo)}
+  .chip.ok{background:var(--green-bg);color:var(--green)}
+
+  .row{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:14px}
+  button.act{border:none;border-radius:10px;padding:10px 17px;font-weight:700;font-size:.88rem;cursor:pointer}
+  .primary{background:var(--indigo);color:#fff}
+  .primary:hover{background:#3730a3}
+  .ghost{background:#f2f4f7;color:var(--ink-2)}
+  .hintb{background:var(--gold-bg);color:var(--gold);border:1.5px solid var(--gold-line)!important}
+  .solb{background:var(--indigo-bg);color:var(--indigo);border:1.5px solid var(--indigo-line)!important}
+  .checkb{background:var(--green);color:#fff;margin-left:auto}
+  .act:disabled,.vs:disabled{background:#e4e7ec!important;color:#98a2b3!important;cursor:not-allowed;border-color:#e4e7ec!important}
+  button:focus-visible{outline:3px solid var(--indigo-line);outline-offset:2px}
+
+  /* ---------- 대진표 ---------- */
+  .bracket{display:flex;gap:10px;overflow-x:auto;padding-bottom:8px}
+  .col{flex:1;min-width:158px;display:flex;flex-direction:column;justify-content:space-around}
+  .col.second{border-left:2px dashed var(--gold-line);padding-left:10px;min-width:186px;background:#fffdf7}
+  .col-head{font-weight:800;font-size:.76rem;color:var(--ink-2);background:#f2f4f7;
+            padding:6px 8px;border-radius:7px;text-align:center;margin-bottom:8px}
+  .col.second .col-head{background:var(--gold-bg);color:var(--gold);border:1px solid var(--gold-line)}
+  .match{border:1.5px solid var(--line);border-radius:11px;padding:7px;margin:4px 0;background:#fff}
+  .match.live{border-color:var(--indigo);box-shadow:0 0 0 3px var(--indigo-bg)}
+  .match.done{background:#fafbfc}
+  .who-item{display:flex;align-items:center;justify-content:space-between;gap:6px;
+            border:1px solid var(--line);border-radius:7px;padding:6px 9px;margin:3px 0;
+            font-weight:700;font-size:.83rem;background:#fff}
+  .who-item.ghosty{color:var(--ink-3);background:#fafbfc;border-style:dashed;font-weight:600}
+  .who-item.win{background:var(--green-bg);border-color:var(--green-line);color:var(--green)}
+  .who-item.lose{background:var(--red-bg);border-color:var(--red-line);color:var(--red);text-decoration:line-through;opacity:.75}
+  .who-item.cand{background:var(--gold-bg);border-color:var(--gold-line);color:var(--gold);
+                 text-decoration:none;opacity:1;box-shadow:0 0 0 2px var(--gold-line)}
+  .tag{font-size:.66rem;font-weight:800;padding:1px 5px;border-radius:4px;background:var(--green);color:#fff}
+  .vs{width:100%;margin-top:5px;border:none;border-radius:7px;padding:6px 0;
+      background:var(--indigo);color:#fff;font-weight:700;font-size:.76rem;cursor:pointer}
+  .col.second .vs{background:var(--gold)}
+  .lockmsg{background:var(--gold-bg);border:1.5px dashed var(--gold-line);color:var(--gold);
+           border-radius:10px;padding:12px;font-size:.82rem;font-weight:700;text-align:center;line-height:1.5}
+
+  /* ---------- 질문 ---------- */
+  .qtext{font-weight:700;line-height:1.6;margin-bottom:12px}
+  .choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:9px}
+  .ch{background:#fff;border:1.5px solid var(--line);border-radius:11px;padding:12px;
+      font-weight:700;font-size:.95rem;color:var(--ink);cursor:pointer;text-align:center}
+  .ch.sel{border-color:var(--indigo);background:var(--indigo-bg);color:var(--indigo)}
+  .ch.ok{border-color:var(--green);background:var(--green-bg);color:var(--green)}
+  .ch.no{border-color:var(--red);background:var(--red-bg);color:var(--red)}
+  .ch:disabled{opacity:.5;cursor:default}
+  .ch.ok:disabled{opacity:1}
+  .panel:empty{display:none}
+  .box{margin-top:12px;padding:14px;border-radius:11px;line-height:1.65;font-size:.9rem;display:none}
+  .box.hint{background:var(--gold-bg);border:1px solid var(--gold-line);color:#78350f}
+  .box.sol{background:var(--green-bg);border:1px solid var(--green-line);color:#065f46}
+  .box h4{margin-bottom:6px;font-size:.95rem}
+  .verdict{margin-top:10px;font-weight:800;font-size:.92rem;min-height:22px}
+  .verdict.ok{color:var(--green)} .verdict.no{color:var(--red)}
+
+  /* ---------- 수식 ---------- */
+  .mth{font-family:var(--math);font-style:italic;font-size:1.06em}
+  .fn{font-family:var(--math);font-style:normal}
+  .lg{font-family:var(--math);white-space:nowrap;font-size:1.08em}
+  .lg .base{font-style:normal;font-size:.68em;vertical-align:-.32em;padding:0 .06em;color:var(--red)}
+  .lg .arg{font-style:italic;padding-left:.12em}
+  .lg .arg.num{font-style:normal}
+  .formula{background:#1e1b4b;color:#e0e7ff;border-radius:14px;padding:20px 16px;text-align:center;
+           font-size:1.25rem;line-height:1.9;margin:14px 0}
+  .formula .lg .base{color:#fca5a5}
+  .legend{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;font-size:.78rem;color:var(--ink-2);margin-top:8px}
+  .legend b{color:var(--red)}
+
+  .card{background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:15px;margin-top:12px}
+  .card h3{color:var(--indigo);font-size:.98rem;margin-bottom:7px}
+  .card p{font-size:.9rem;line-height:1.7;color:var(--ink-2)}
+  .card p+p{margin-top:6px}
+
+  table{width:100%;border-collapse:collapse;margin-top:12px;font-size:.86rem}
+  th,td{border:1px solid var(--line);padding:8px 6px;text-align:center}
+  th{background:#f2f4f7;font-weight:800;font-size:.8rem}
+  tbody tr:nth-child(odd){background:#fafbfc}
+
+  .blanks{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin-top:14px}
+  .blank{border:1.5px solid var(--line);border-radius:11px;padding:12px;background:#fff}
+  .blank label{display:block;font-size:.83rem;font-weight:700;line-height:1.5;margin-bottom:8px}
+  .blank input{width:100%;padding:9px 10px;border:1.5px solid var(--line);border-radius:8px;
+               font-size:1rem;font-weight:700;text-align:center}
+  .blank input:focus{outline:none;border-color:var(--indigo)}
+  .blank.ok{border-color:var(--green);background:var(--green-bg)}
+  .blank.no{border-color:var(--red);background:var(--red-bg)}
+  .blank .fb{font-size:.8rem;font-weight:700;margin-top:6px;min-height:18px}
+
+  .final{background:linear-gradient(135deg,#4338ca,#7c3aed);color:#fff;border-radius:16px;padding:22px;margin-top:14px;display:none}
+  .final h2{font-size:1.1rem;margin-bottom:10px}
+  .final .line{font-size:.95rem;line-height:1.9}
+  .final .big{font-size:1.35rem;font-weight:800;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.3)}
+
+  .note{font-size:.8rem;color:var(--ink-3);line-height:1.6;margin-top:10px}
+  .record-tbl-wrap{max-height:320px;overflow:auto;margin-top:10px}
+
+
+  /* ---------- 알고리즘 만들기 ---------- */
+  .algo-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width:760px){.algo-grid{grid-template-columns:1fr}}
+  .algo-box{border:1.5px solid var(--line);border-radius:12px;padding:13px;background:#fff}
+  .algo-box h3{font-size:.88rem;color:var(--ink-2);margin-bottom:9px}
+  .cardbtn{display:block;width:100%;text-align:left;background:#fff;border:1.5px solid var(--line);
+           border-radius:10px;padding:10px 12px;margin-bottom:7px;font-size:.85rem;line-height:1.5;
+           font-weight:600;cursor:pointer;color:var(--ink)}
+  .cardbtn:hover{border-color:var(--indigo);background:var(--indigo-bg)}
+  .cardbtn:disabled{opacity:.4;cursor:not-allowed}
+  .seq-empty{color:var(--ink-3);font-size:.85rem;padding:14px;text-align:center;
+             border:1.5px dashed var(--line);border-radius:10px}
+  .seq-item{display:flex;align-items:center;gap:8px;background:var(--indigo-bg);
+            border:1.5px solid var(--indigo-line);border-radius:10px;padding:9px 10px;margin-bottom:7px}
+  .seq-item .no{flex:0 0 22px;height:22px;border-radius:50%;background:var(--indigo);color:#fff;
+                font-size:.72rem;font-weight:800;display:flex;align-items:center;justify-content:center}
+  .seq-item .txt{flex:1;font-size:.83rem;line-height:1.45;font-weight:600;color:#1e1b4b}
+  .seq-item .mv{border:none;background:transparent;cursor:pointer;font-size:.9rem;color:var(--ink-2);padding:2px 4px}
+  .seq-item .mv:hover{color:var(--indigo)}
+  .runlog{background:#0f172a;color:#cbd5e1;border-radius:10px;padding:12px 14px;margin-top:12px;
+          font-size:.82rem;line-height:1.85;font-family:ui-monospace,Menlo,Consolas,monospace}
+  .runlog .ok{color:#6ee7b7} .runlog .bad{color:#fca5a5} .runlog .dim{color:#64748b}
+  .verdictbox{border-radius:11px;padding:14px;margin-top:12px;font-size:.9rem;line-height:1.7}
+  .verdictbox.good{background:var(--green-bg);border:1.5px solid var(--green-line);color:#065f46}
+  .verdictbox.warn{background:var(--gold-bg);border:1.5px solid var(--gold-line);color:#78350f}
+  .verdictbox.bad{background:var(--red-bg);border:1.5px solid var(--red-line);color:#7f1d1d}
+  .verdictbox b{font-size:.95rem}
+  .verdictbox{animation:vpop .45s ease-out}
+  @keyframes vpop{0%{transform:scale(.96);opacity:0}60%{transform:scale(1.01)}100%{transform:scale(1);opacity:1}}
+  .runlog{animation:vpop .45s ease-out}
+  .algo-run{position:relative}
+  .algo-run.busy{opacity:.6}
+  .pseudo{background:#1e1b4b;color:#e0e7ff;border-radius:12px;padding:16px 18px;margin-top:12px;
+          font-size:.86rem;line-height:2;font-family:ui-monospace,Menlo,Consolas,monospace;display:none}
+  .pseudo .kw{color:#fca5a5;font-weight:700}
+  .pseudo .cm{color:#a5b4fc}
+
+  /* ---------- 질문란 ---------- */
+  .qa-panel{border-color:var(--indigo-line);background:#fdfdff}
+  .qa-chips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}
+  .qa-chip{background:#fff;border:1.5px solid var(--indigo-line);color:var(--indigo);border-radius:999px;
+           padding:7px 13px;font-size:.8rem;font-weight:700;cursor:pointer}
+  .qa-chip:hover{background:var(--indigo-bg)}
+  .qa-thread{max-height:420px;overflow-y:auto;padding:4px 2px;margin-bottom:12px}
+  .bub{border-radius:13px;padding:12px 14px;margin:8px 0;line-height:1.7;font-size:.9rem;max-width:88%}
+  .bub.me{background:var(--indigo);color:#fff;margin-left:auto;border-bottom-right-radius:4px;font-weight:600}
+  .bub.ans{background:#fff;border:1.5px solid var(--line);border-bottom-left-radius:4px}
+  .bub.ans h4{color:var(--indigo);font-size:.9rem;margin-bottom:7px}
+  .bub.ans .src{display:inline-block;font-size:.68rem;font-weight:800;padding:2px 7px;border-radius:999px;
+                background:var(--indigo-bg);color:var(--indigo);margin-bottom:8px}
+  .bub.ans .src.ai{background:var(--gold-bg);color:var(--gold)}
+  .bub.ans .src.none{background:var(--red-bg);color:var(--red)}
+  .bub.ans ul{margin:6px 0 0 18px} .bub.ans li{margin:3px 0}
+  .bub.ans .eg{background:var(--paper);border-radius:8px;padding:8px 10px;margin-top:8px;font-size:.86rem}
+  .qa-input{display:flex;gap:8px;flex-wrap:wrap}
+  .qa-input input{flex:1;min-width:200px;padding:11px 13px;border:1.5px solid var(--line);
+                  border-radius:10px;font-size:.95rem}
+  .qa-input input:focus{outline:none;border-color:var(--indigo)}
+  .qa-ai{display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--ink-2);font-weight:700;margin-top:10px}
+  .dots::after{content:'…';animation:blink 1.1s infinite}
+  @keyframes blink{0%,100%{opacity:.3}50%{opacity:1}}
+
+  @media (max-width:640px){
+    h1{font-size:1.1rem}
+    .rail-step{font-size:.7rem;padding:9px 4px}
+    .rail-step .n{margin-right:3px}
+    .checkb{margin-left:0;width:100%}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+  .fx-plus{position:fixed;color:#10b981;font-size:30pt;font-weight:900;z-index:900;pointer-events:none;
+           animation:fall 1.2s forwards ease-in-out;text-shadow:0 4px 10px rgba(0,0,0,.15)}
+  @keyframes fall{0%{top:-50px;opacity:1}70%{top:78vh;opacity:1}100%{top:84vh;opacity:0}}
+  .fx-conf{position:fixed;width:9px;height:9px;z-index:899;pointer-events:none;animation:pop 1.1s ease-out forwards}
+  @keyframes pop{0%{transform:translate(0,0) rotate(0);opacity:1}100%{transform:translate(var(--dx),var(--dy)) rotate(360deg);opacity:0}}
+</style>
+</head>
+<body>
+
+<!-- ===== 이름 · 학번 입력 ===== -->
+<div id="gate">
+  <div class="gate-card">
+    <span class="eyebrow">비버 챌린지</span>
+    <h2 style="margin-top:10px">나무 갉기 대회에 참가하기</h2>
+    <p>이름과 학번을 적으면 문제를 푼 기록이 함께 저장됩니다.</p>
+    <div class="field">
+      <label for="in-sid">학번</label>
+      <input id="in-sid" type="text" inputmode="numeric" placeholder="예: 10312" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="in-name">이름</label>
+      <input id="in-name" type="text" placeholder="예: 김비버" autocomplete="off">
+    </div>
+    <div class="gate-msg" id="gate-msg"></div>
+    <button class="act primary" style="width:100%;padding:12px" onclick="enter()">대회 시작하기</button>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="top">
+    <div>
+      <span class="eyebrow">토너먼트 시뮬레이터</span>
+      <h1>비버들의 나무 갉기 대회 🦫<br>1등과 2등을 가리려면 최소 몇 번 대결해야 할까?</h1>
+    </div>
+    <div class="who" id="who-badge"><span>참가자</span> — </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab on" id="tab-8"  onclick="switchTab(8)">1단계 · 8명 대회</button>
+    <button class="tab"    id="tab-16" onclick="switchTab(16)">2단계 · 16명 대회</button>
+    <button class="tab"    id="tab-gen" onclick="switchTab('gen')">3단계 · <span class="mth">N</span>명 모드</button>
+    <button class="tab"    id="tab-algo" onclick="switchTab('algo')">4단계 · 알고리즘 만들기</button>
+    <button class="tab"    id="tab-log" onclick="switchTab('log')">📋 내 기록</button>
+  </div>
+
+  <div class="quest" id="quest"></div>
+
+  <!-- ===== 대진표 모드 ===== -->
+  <div id="view-bracket">
+    <div class="rail" id="rail"></div>
+
+    <!-- 단계 1 : 본선 -->
+    <div class="panel" id="p1">
+      <div class="panel-head">
+        <h2>단계 ① 본선 토너먼트로 1등 가리기</h2><span class="chip now" id="chip1">진행 중</span>
+      </div>
+      <div class="row">
+        <button class="act primary" onclick="drawLots()">🎲 대진표 랜덤 배치</button>
+        <button class="act ghost" onclick="resetAll()">🔄 처음부터</button>
+      </div>
+      <div class="bracket" id="bracket"></div>
+    </div>
+
+    <!-- 질문 1 -->
+    <div class="panel locked" id="q1"></div>
+    <!-- 질문 2 : 2등 후보 -->
+    <div class="panel locked" id="q2"></div>
+    <!-- 단계 3 : 2등 결정전 + 질문 3 -->
+    <div class="panel locked" id="q3"></div>
+    <!-- 질문 4 : 총합 -->
+    <div class="panel locked" id="q4"></div>
+
+    <div class="final" id="final"></div>
+  </div>
+
+  <!-- ===== N명 모드 ===== -->
+  <div id="view-gen" style="display:none"></div>
+
+  <!-- ===== 알고리즘 만들기 ===== -->
+  <div id="view-algo" style="display:none"></div>
+
+  <!-- ===== 기록 ===== -->
+  <div id="view-log" style="display:none"></div>
+
+  <!-- ===== 질문란 (모든 단계에서 보임) ===== -->
+  <div class="panel qa-panel" id="qa-panel">
+    <div class="panel-head">
+      <h2>💬 궁금한 점 물어보기</h2>
+      <span class="chip now">아무 때나</span>
+    </div>
+    <p class="note" style="margin-top:0;margin-bottom:12px">
+      풀다가 막히거나 이유가 궁금하면 눌러 보거나 직접 적어 보세요. 질문한 내용도 기록에 함께 남습니다.
+    </p>
+    <div class="qa-chips" id="qa-chips"></div>
+    <div class="qa-thread" id="qa-thread"></div>
+    <div class="qa-input">
+      <input id="qa-in" type="text" placeholder="예: 왜 라운드 수가 log₂N이야?" autocomplete="off">
+      <button class="act primary" onclick="ask()">질문하기</button>
+    </div>
+    <label class="qa-ai">
+      <input type="checkbox" id="qa-ai-toggle">
+      🤖 답변집에 없으면 AI 도우미에게 물어보기 (인터넷 연결이 필요합니다)
+    </label>
+  </div>
+</div>
+
+<script>
+/* =======================================================================
+   비버 챌린지 — 토너먼트 최소 대결 수
+   구조:  단계①본선 → 질문1(1등 대결 수) → 질문2(2등 후보 수)
+          → 단계③2등 결정전 + 질문3(2등 대결 수) → 질문4(총합)
+   ======================================================================= */
+
+/* ---------- 수식 표기 헬퍼 : 밑(base)과 진수(argument) ---------- */
+function LOG(base, arg, argIsNum){
+  return `<span class="lg"><span class="fn">log</span><span class="base">${base}</span>` +
+         `<span class="arg${argIsNum?' num':''}">${arg}</span></span>`;
+}
+const V = s => `<span class="mth">${s}</span>`;   // 변수(이탤릭)
+
+/* ---------- 상태 ---------- */
+const S = {
+  name:'', sid:'', tab:8, N:8, K:3,
+  beavers:[], drawn:false,
+  main:[], second:[],        // 경기 객체 배열
+  champ:null, candidates:[], runnerUp:null,
+  step:1,                     // 1~5(완료)
+  qState:{},                  // 문항별 {tries, solved}
+  records:[]                  // 저장되는 기록
+};
+
+/* ---------- 저장소 (window.storage / 실패 시 메모리) ---------- */
+const Store = {
+  key(){ return 'bebras_tour:' + (S.sid||'no-id').replace(/[^0-9A-Za-z가-힣_-]/g,'') + '_' +
+         (S.name||'익명').replace(/[^0-9A-Za-z가-힣_-]/g,''); },
+  async save(){
+    const payload = JSON.stringify({name:S.name, sid:S.sid, updatedAt:new Date().toISOString(), records:S.records});
+    try{
+      if(window.storage && window.storage.set){ await window.storage.set(this.key(), payload, true); return true; }
+    }catch(e){ console.warn('저장 실패:', e); }
+    return false;
+  },
+  async listAll(){
+    try{
+      if(!(window.storage && window.storage.list)) return null;
+      const r = await window.storage.list('bebras_tour:', true);
+      if(!r || !r.keys) return null;
+      const out=[];
+      for(const k of r.keys){
+        try{ const v = await window.storage.get(k, true); if(v && v.value) out.push(JSON.parse(v.value)); }catch(e){}
+      }
+      return out;
+    }catch(e){ return null; }
+  }
+};
+
+/* ---------- 기록 ---------- */
+function modeName(){
+  return S.tab==='gen' ? 'N명 모드'
+       : S.tab==='algo'? '알고리즘 만들기'
+       : S.tab==='log' ? '기록'
+       : S.tab+'명 대회';
+}
+function logAnswer(qid, label, picked, answer, correct, tries){
+  S.records.push({
+    학번:S.sid, 이름:S.name, 모드:modeName(),
+    문항:qid, 내용:label, 선택:String(picked), 정답:String(answer),
+    정오:correct?'O':'X', 시도:tries, 시각:new Date().toLocaleString('ko-KR')
+  });
+  Store.save();
+  if(document.getElementById('view-log').style.display==='block') renderLog();
+}
+
+/* ---------- 로그인 ---------- */
+function enter(){
+  const sid = document.getElementById('in-sid').value.trim();
+  const name= document.getElementById('in-name').value.trim();
+  if(!sid || !name){ document.getElementById('gate-msg').innerText='학번과 이름을 모두 입력해 주세요.'; return; }
+  S.sid=sid; S.name=name;
+  document.getElementById('gate').style.display='none';
+  document.getElementById('who-badge').innerHTML = `<span>참가자</span> ${sid} <b>${name}</b>`;
+  switchTab(8);
+}
+['in-sid','in-name'].forEach(id=>document.getElementById(id)
+  .addEventListener('keydown', e=>{ if(e.key==='Enter') enter(); }));
+
+/* =========================== 탭 =========================== */
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
+  document.getElementById('tab-'+t).classList.add('on');
+  S.tab=t;
+  const show=(id,on)=>document.getElementById(id).style.display=on?'block':'none';
+  show('view-bracket', t===8||t===16);
+  show('view-gen',  t==='gen');
+  show('view-algo', t==='algo');
+  show('view-log',  t==='log');
+
+  if(t===8||t===16){ S.N=t; S.K=Math.log2(t); resetAll(); }
+  else if(t==='gen'){ renderGen(); newGenRound(); }
+  else if(t==='algo'){ renderAlgo(); }
+  else renderLog();
+}
+
+/* ===================== 대진표 모드 ===================== */
+function resetAll(){
+  const N=S.N, K=S.K;
+  S.beavers=[]; S.drawn=false; S.champ=null; S.candidates=[]; S.runnerUp=null; S.step=1; S.qState={};
+
+  // 본선: 1라운드 N/2경기 → ... → 결승
+  S.main=[]; let id=1, cnt=N/2, r=1;
+  while(cnt>=1){ for(let i=0;i<cnt;i++) S.main.push({id:id++, round:r, idx:i, p1:null,p2:null,winner:null,loser:null,played:false,kind:'main'}); cnt/=2; r++; }
+  // 2등 결정전: 후보 K명 → K-1경기(체인)
+  S.second=[]; for(let i=0;i<K-1;i++) S.second.push({id:id++, order:i, p1:null,p2:null,winner:null,loser:null,played:false,kind:'second'});
+
+  document.getElementById('quest').innerHTML =
+    `❓ <b>[${N}명 대회]</b> 비버 ${N}마리 중 가장 빠른 <b>1등</b>과 그 다음인 <b>2등</b>을 확실하게 가려내려면, ` +
+    `대결은 최소 몇 번 필요할까요? 단계를 하나씩 따라가며 직접 확인해 봅시다.`;
+
+  ['q1','q2','q3','q4'].forEach(k=>{ document.getElementById(k).innerHTML=''; document.getElementById(k).classList.add('locked'); });
+  document.getElementById('final').style.display='none';
+  document.getElementById('p1').classList.remove('locked');
+  document.getElementById('chip1').className='chip now'; document.getElementById('chip1').innerText='진행 중';
+  renderRail(); renderBracket();
+}
+
+function renderRail(){
+  const labels=['본선 대결','1등 대결 수','2등 후보','2등 결정전','최소 대결 수'];
+  document.getElementById('rail').innerHTML = labels.map((L,i)=>{
+    const n=i+1, cls = S.step>n?'done' : S.step===n?'on':'';
+    return `<div class="rail-step ${cls}"><span class="n">${S.step>n?'✓':n}</span>${L}</div>`;
+  }).join('');
+}
+
+function drawLots(){
+  if(S.main.some(m=>m.played)){
+    if(!confirm('다시 배치하면 지금까지의 대결 결과가 모두 지워집니다. 계속할까요?')) return;
+    resetAll();
+  }
+  const N=S.N;
+  const names='ABCDEFGHIJKLMNOP'.slice(0,N).split('');
+  const ranks=[...Array(N).keys()].map(i=>i+1).sort(()=>Math.random()-0.5); // 숨은 실력(1=최강)
+  S.beavers = names.map((nm,i)=>({name:nm, rank:ranks[i]}));
+  const order=[...S.beavers].sort(()=>Math.random()-0.5);
+  const r1=S.main.filter(m=>m.round===1);
+  r1.forEach((m,i)=>{ m.p1=order[i*2]; m.p2=order[i*2+1]; });
+  S.drawn=true;
+  renderBracket();
+}
+
+function findMain(round,idx){ return S.main.find(m=>m.round===round&&m.idx===idx); }
+const maxRound = ()=>Math.log2(S.N);
+
+function play(id){
+  const m=[...S.main,...S.second].find(x=>x.id===id);
+  if(!m||m.played||!m.p1||!m.p2) return;
+  const w = m.p1.rank<m.p2.rank ? m.p1 : m.p2;
+  const l = m.p1.rank<m.p2.rank ? m.p2 : m.p1;
+  m.winner=w; m.loser=l; m.played=true;
+
+  if(m.kind==='main'){
+    if(m.round<maxRound()){
+      const nx=findMain(m.round+1, Math.floor(m.idx/2));
+      if(m.idx%2===0) nx.p1=w; else nx.p2=w;
+    }else{
+      S.champ=w;
+      // 1등에게 진 비버 = 2등 후보 (진 라운드 순서대로)
+      S.candidates = S.main.filter(x=>x.played && x.winner.name===w.name)
+                           .sort((a,b)=>a.round-b.round).map(x=>x.loser);
+      if(S.step===1){ S.step=2; renderRail(); buildQ1(); }
+    }
+  }else{
+    if(m.order < S.second.length-1){ S.second[m.order+1].p1 = w; }
+    else { S.runnerUp = w; tryQ4(); }
+  }
+  renderBracket();
+}
+
+function seedSecond(){
+  if(S.candidates.length<2) return;
+  S.second.forEach(m=>{ m.p1=null;m.p2=null;m.winner=null;m.loser=null;m.played=false; });
+  S.second[0].p1=S.candidates[0];
+  S.second[0].p2=S.candidates[1];
+  for(let i=1;i<S.second.length;i++) S.second[i].p2=S.candidates[i+1];
+  renderBracket();
+}
+
+/* ---------- 대진표 그리기 ---------- */
+function renderBracket(){
+  const N=S.N, R=maxRound();
+  const roundName = r => r===R ? '결승' : `${N/Math.pow(2,r-1)}강`;
+  let html='';
+  for(let r=1;r<=R;r++){
+    const ms=S.main.filter(m=>m.round===r);
+    html += `<div class="col"><div class="col-head">${r}라운드 · ${roundName(r)}</div>` +
+      ms.map(m=>matchHTML(m, r===1?'대기':'승자 대기')).join('') + `</div>`;
+  }
+  // 2등 결정전 열
+  html += `<div class="col second"><div class="col-head">🥈 1등에게 진 비버끼리 2등 가리기</div>`;
+  if(S.step<4){
+    html += `<div class="lockmsg">🔒 잠김<br><span style="font-weight:600">단계 ②·③을 먼저 통과하면 열립니다</span></div>`;
+  }else{
+    html += S.second.map((m,i)=>matchHTML(m, i===0?'후보 대기':'앞 경기 승자')).join('');
+  }
+  html += `</div>`;
+  document.getElementById('bracket').innerHTML = html;
+}
+
+function matchHTML(m, ph){
+  const cand = n => (S.step>=3 && S.candidates.some(c=>c.name===n));
+  const slot = (p, who)=>{
+    if(!p) return `<div class="who-item ghosty">${ph}</div>`;
+    let cls='who-item', tag='';
+    if(m.played){
+      if(m.winner.name===p.name){ cls+=' win'; tag='<span class="tag">승</span>'; }
+      else cls += cand(p.name) && m.kind==='main' ? ' cand' : ' lose';
+    }else if(cand(p.name) && m.kind==='second') cls+=' cand';
+    return `<div class="${cls}">🦫 비버 ${p.name}${tag}</div>`;
+  };
+  const ready = m.p1 && m.p2 && !m.played && S.drawn;
+  const btn = m.played
+    ? `<button class="vs" disabled>✓ 완료</button>`
+    : `<button class="vs" ${ready?'':'disabled'} onclick="play(${m.id})">⚔️ ${m.id}번 대결</button>`;
+  return `<div class="match ${m.played?'done':(ready?'live':'')}">${slot(m.p1)}${slot(m.p2)}${btn}</div>`;
+}
+
+/* ===================== 질문 4개 ===================== */
+function qPanel(target, cfg){
+  const el=document.getElementById(target);
+  el.classList.remove('locked');
+  el.innerHTML = `
+    <div class="panel-head"><h2>${cfg.head}</h2><span class="chip now" id="chip-${cfg.id}">진행 중</span></div>
+    ${cfg.pre||''}
+    <div class="qtext">${cfg.q}</div>
+    <div class="choices" id="ch-${cfg.id}">
+      ${cfg.options.map(o=>`<button class="ch" onclick="pick('${cfg.id}',this)">${o}</button>`).join('')}
+    </div>
+    <div class="verdict" id="vd-${cfg.id}"></div>
+    <div class="row" style="margin-top:12px">
+      <button class="act hintb" onclick="toggle('hint-${cfg.id}')">💡 힌트</button>
+      <button class="act solb"  onclick="toggle('sol-${cfg.id}')">📖 풀이 보기</button>
+      <button class="act checkb" onclick="grade('${cfg.id}')">정답 확인</button>
+    </div>
+    <div class="box hint" id="hint-${cfg.id}"><h4>💡 힌트</h4>${cfg.hint}</div>
+    <div class="box sol"  id="sol-${cfg.id}"><h4>📖 풀이</h4>${cfg.sol}</div>`;
+  S.qState[cfg.id]={tries:0, solved:false, answer:cfg.answer, label:cfg.label, next:cfg.next};
+  el.scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+function pick(id, btn){
+  document.querySelectorAll(`#ch-${id} .ch`).forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  S.qState[id].picked = btn.innerText.trim();
+}
+
+function grade(id){
+  const q=S.qState[id];
+  if(q.solved) return;
+  if(!q.picked){ document.getElementById('vd-'+id).innerHTML='<span style="color:#b45309">답을 먼저 골라 주세요.</span>'; return; }
+  q.tries++;
+  const ok = q.picked===q.answer;
+  const btn=[...document.querySelectorAll(`#ch-${id} .ch`)].find(b=>b.innerText.trim()===q.picked);
+  const vd=document.getElementById('vd-'+id);
+  logAnswer(id, q.label, q.picked, q.answer, ok, q.tries);
+
+  if(ok){
+    q.solved=true;
+    btn.classList.remove('sel'); btn.classList.add('ok');
+    vd.className='verdict ok'; vd.innerHTML=`정답입니다! (시도 ${q.tries}회)`;
+    document.getElementById('chip-'+id).className='chip ok';
+    document.getElementById('chip-'+id).innerText='완료';
+    document.querySelectorAll(`#ch-${id} .ch`).forEach(b=>b.disabled=true);
+    fxWin();
+    if(q.next) q.next();
+  }else{
+    btn.classList.remove('sel'); btn.classList.add('no');
+    q.picked=null;
+    vd.className='verdict no'; vd.innerHTML=`다시 생각해 볼까요? 답을 다시 골라 [정답 확인]을 누르세요. (시도 ${q.tries}회)`;
+    setTimeout(()=>btn.classList.remove('no'), 1400);
+  }
+}
+function toggle(id){ const b=document.getElementById(id); b.style.display = b.style.display==='block'?'none':'block'; }
+
+/* ---------- 질문 1 : 1등 대결 수 ---------- */
+function buildQ1(){
+  const N=S.N;
+  qPanel('q1',{
+    id:'Q1', head:'단계 ② 1등을 가리는 데 든 대결 수',
+    label:'1등 결정에 필요한 대결 수',
+    pre:`<div class="card" style="margin-top:0"><p>본선이 끝났습니다. 1등은 <b>🦫 비버 ${S.champ.name}</b>입니다.
+         위 대진표에서 <b>⚔️ 대결 버튼을 몇 번 눌렀는지</b> 세어 보세요.</p></div>`,
+    q:`${N}마리 중 1등 한 마리를 확정하는 데 필요한 대결은 모두 몇 번인가요?`,
+    options:[N/2, N-2, N-1, N].map(v=>v+'회'),
+    answer:(N-1)+'회',
+    hint:`대결 한 번이 끝나면 진 비버는 반드시 <b>한 마리</b> 탈락합니다.
+          ${N}마리 중 1등만 남기려면 몇 마리를 탈락시켜야 할까요?`,
+    sol:`한 경기에서 탈락자는 정확히 1명입니다. 1등 한 마리만 남기려면 나머지 ${N-1}마리를 모두 탈락시켜야 하므로
+         경기 수도 정확히 <b>${N-1}회</b>입니다. 일반적으로 ${V('N')}마리라면 ${V('N')} − 1회.`,
+    next:()=>{ S.step=3; renderRail(); renderBracket(); buildQ2(); }
+  });
+}
+
+/* ---------- 질문 2 : 2등 후보 수 ---------- */
+function buildQ2(){
+  const N=S.N, K=S.K;
+  const cands = S.candidates.map(c=>`비버 ${c.name}`).join(', ');
+  qPanel('q2',{
+    id:'Q2', head:'단계 ③ 2등이 될 수 있는 비버는 누구?',
+    label:'2등 후보 수(1등에게 진 비버 수)',
+    pre:`<div class="card" style="margin-top:0"><p>대진표에서 <span style="color:#b45309">주황색으로 표시된 비버</span>가
+         1등 비버 ${S.champ.name}에게 <b>직접 진</b> 비버들입니다 — ${cands}.<br>
+         1등이 아닌 다른 비버에게 진 비버는 그 비버보다 느리므로 2등이 될 수 없습니다.</p></div>`,
+    q:`이 대회에서 <b>2등이 될 가능성이 있는 비버</b>는 모두 몇 마리인가요?`,
+    options:[K-1, K, K+1, N-1].map(v=>v+'마리'),
+    answer:K+'마리',
+    hint:`1등 비버는 1라운드부터 결승까지 <b>몇 경기</b>를 치렀나요? 그 경기마다 상대가 한 마리씩 있었습니다.`,
+    sol:`${N}마리 토너먼트의 라운드 수는 ${LOG(2,N,true)} = ${K}이고, 1등은 ${K}경기를 모두 이겼습니다.
+         따라서 1등에게 직접 진 비버도 정확히 <b>${K}마리</b>. 일반적으로 ${V('N')}마리라면 ${LOG(2,'N')}마리입니다.
+         <div class="legend" style="justify-content:flex-start;margin-top:8px">
+           ${LOG(2,'N')} 에서 <b>2</b>는 밑(base), <span class="mth">N</span>은 진수(argument)입니다.</div>`,
+    next:()=>{ S.step=4; renderRail(); seedSecond(); buildQ3(); }
+  });
+}
+
+/* ---------- 질문 3 : 2등 결정전 대결 수 ---------- */
+function buildQ3(){
+  const K=S.K;
+  qPanel('q3',{
+    id:'Q3', head:'단계 ④ 2등 결정전 치르기',
+    label:'2등 결정에 필요한 추가 대결 수',
+    pre:`<div class="card" style="margin-top:0"><p>대진표 오른쪽 <b>2등 결정전</b> 칸이 열렸습니다.
+         후보 ${K}마리끼리 대결시켜 2등을 가려 보세요. <b>먼저 대결을 모두 마친 뒤</b> 아래 답을 고르면 됩니다.</p></div>`,
+    q:`후보 ${K}마리 중 2등을 확정하려면 <b>추가로</b> 몇 번의 대결이 필요한가요?`,
+    options:[K-2, K-1, K, S.N-1].map(v=>v+'회'),
+    answer:(K-1)+'회',
+    hint:`단계 ②와 똑같은 원리입니다. ${K}마리 중 1마리만 남기려면?`,
+    sol:`후보 ${K}마리 중 가장 빠른 한 마리를 뽑는 작은 토너먼트이므로 ${K} − 1 = <b>${K-1}회</b>가 필요합니다.
+         일반적으로는 ${LOG(2,'N')} − 1회입니다.`,
+    next:()=>{ renderBracket(); tryQ4(); }
+  });
+  renderBracket();
+}
+
+/* 2등 결정전이 끝나고 질문 3까지 맞혀야 마지막 질문이 열립니다 */
+function tryQ4(){
+  const q3 = S.qState.Q3;
+  if(S.runnerUp && q3 && q3.solved && !S.qState.Q4){ S.step=5; renderRail(); buildQ4(); }
+}
+
+/* ---------- 질문 4 : 총 대결 수 ---------- */
+function buildQ4(){
+  const N=S.N, K=S.K, total=N+K-2;
+  qPanel('q4',{
+    id:'Q4', head:'단계 ⑤ 두 과정을 합치면',
+    label:'1·2등을 모두 가리는 최소 대결 수',
+    pre:`<div class="card" style="margin-top:0"><p>2등은 <b>🦫 비버 ${S.runnerUp.name}</b>입니다.
+         1등 가리기(${N-1}회)와 2등 가리기(${K-1}회)를 합쳐 봅시다.</p></div>`,
+    q:`1등과 2등을 모두 확실하게 가리는 데 필요한 <b>최소</b> 대결 수는?`,
+    options:[N-1, N, N+K-2, N+K-1].map(v=>v+'회'),
+    answer:total+'회',
+    hint:`(1등 가리기 ${N-1}회) + (2등 가리기 ${K-1}회)`,
+    sol:`${N-1} + ${K-1} = <b>${total}회</b>.
+         공식으로 쓰면 (${V('N')} − 1) + (${LOG(2,'N')} − 1) = ${V('N')} + ${LOG(2,'N')} − 2 입니다.`,
+    next:()=>showFinal()
+  });
+}
+
+function showFinal(){
+  const N=S.N,K=S.K,total=N+K-2;
+  const order=[...S.beavers].sort((a,b)=>a.rank-b.rank).map(b=>`${b.rank}위 ${b.name}`).join(' · ');
+  const f=document.getElementById('final');
+  f.style.display='block';
+  f.innerHTML=`<h2>🏁 ${N}명 대회 정리</h2>
+    <div class="line">
+      🥇 1등 가리기 &nbsp;=&nbsp; ${V('N')} − 1 &nbsp;=&nbsp; ${N} − 1 &nbsp;=&nbsp; <b>${N-1}회</b><br>
+      🎯 2등 후보 수 &nbsp;=&nbsp; ${LOG(2,'N')} &nbsp;=&nbsp; ${LOG(2,N,true)} &nbsp;=&nbsp; <b>${K}마리</b><br>
+      🥈 2등 가리기 &nbsp;=&nbsp; ${LOG(2,'N')} − 1 &nbsp;=&nbsp; <b>${K-1}회</b>
+    </div>
+    <div class="big">최소 대결 수 = ${V('N')} + ${LOG(2,'N')} − 2 = ${N} + ${K} − 2 = ${total}회</div>
+    <div class="note" style="color:#e0e7ff;margin-top:12px">
+      숨은 실력 순서: ${order}<br>
+      실제로 이 순서대로 1등 ${S.champ.name}, 2등 ${S.runnerUp.name}이 뽑혔는지 확인해 보세요.
+    </div>`;
+  f.scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+/* ===================== N명 모드 ===================== */
+function renderGen(){
+  document.getElementById('quest').innerHTML =
+    `❓ <b>[${V('N')}명 모드]</b> 비버가 ${V('N')}마리(${V('N')} = 2<sup>${V('k')}</sup>)일 때, ` +
+    `1등과 2등을 모두 가리는 최소 대결 수를 ${V('N')}에 대한 식으로 나타내면 어떻게 될까요?`;
+
+  const rows=[4,8,16,32,64,128,256].map(n=>{
+    const k=Math.log2(n);
+    return `<tr><td>${n}</td><td>${k}</td><td>${n-1}</td><td>${k}</td><td>${k-1}</td><td><b>${n+k-2}</b></td></tr>`;
+  }).join('');
+
+  document.getElementById('view-gen').innerHTML = `
+    <div class="panel">
+      <div class="panel-head"><h2>🧮 ${V('N')}명일 때의 공식</h2><span class="chip now">일반화</span></div>
+      <p class="note" style="margin-top:0">비버가 ${V('N')} = 2<sup>${V('k')}</sup>마리(4, 8, 16, 32 …)일 때의 규칙을 식으로 정리합니다.</p>
+
+      <div class="formula">
+        최소 대결 수 &nbsp;=&nbsp; (${V('N')} − 1) + (${LOG(2,'N')} − 1) &nbsp;=&nbsp;
+        <b>${V('N')} + ${LOG(2,'N')} − 2</b>
+      </div>
+      <div class="legend">
+        <span>${LOG(2,'N')} → 밑 <b>2</b>, 진수 <span class="mth">N</span></span>
+        <span>${LOG(2,'N')} = ${V('k')} ⟺ 2<sup>${V('k')}</sup> = ${V('N')}</span>
+        <span>예) ${LOG(2,8,true)} = 3, ${LOG(2,64,true)} = 6</span>
+      </div>
+
+      <div class="card">
+        <h3>1. 1등 가리기가 ${V('N')} − 1회인 이유</h3>
+        <p>대결 한 번마다 탈락자는 정확히 한 마리입니다. ${V('N')}마리 중 1등만 남기려면
+        ${V('N')} − 1마리를 탈락시켜야 하므로, 대결도 정확히 ${V('N')} − 1회 필요합니다.</p>
+      </div>
+      <div class="card">
+        <h3>2. 2등 후보가 ${LOG(2,'N')}마리인 이유</h3>
+        <p>2등은 <b>1등에게 직접 진 비버</b> 중에서만 나옵니다. 1등이 아닌 비버에게 졌다면 그 비버보다 느리므로 2등일 수 없기 때문입니다.</p>
+        <p>${V('N')}마리 토너먼트의 라운드 수는 ${LOG(2,'N')}이고, 1등은 매 라운드 한 마리씩 이겼습니다.
+        그래서 1등에게 진 비버는 정확히 ${LOG(2,'N')}마리입니다.</p>
+      </div>
+      <div class="card">
+        <h3>3. 2등 가리기가 ${LOG(2,'N')} − 1회인 이유</h3>
+        <p>후보 ${LOG(2,'N')}마리로 작은 토너먼트를 한 번 더 여는 셈입니다. 1번 원리를 그대로 적용하면
+        ${LOG(2,'N')} − 1회가 더 필요합니다.</p>
+      </div>
+
+      <table>
+        <thead><tr><th>${V('N')}</th><th>${LOG(2,'N')}</th><th>1등 대결</th><th>2등 후보</th><th>2등 대결</th><th>최소 대결 수</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>🎮 ${V('N')}명 모드 도전</h2><span class="chip now" id="chip-gen">진행 중</span></div>
+      <div class="qtext" id="gen-q"></div>
+      <div class="blanks" id="gen-blanks"></div>
+      <div class="verdict" id="gen-vd"></div>
+      <div class="row" style="margin-top:14px">
+        <button class="act hintb" onclick="toggle('gen-hint')">💡 힌트</button>
+        <button class="act ghost" onclick="newGenRound()">🎲 다른 ${V('N')}으로 도전</button>
+        <button class="act checkb" onclick="gradeGen()">정답 확인</button>
+      </div>
+      <div class="box hint" id="gen-hint"><h4>💡 힌트</h4>
+        ① ${V('N')} − 1 &nbsp;·&nbsp; ② ${LOG(2,'N')} (2를 몇 번 곱해야 ${V('N')}이 되나요?) &nbsp;·&nbsp;
+        ③ ${LOG(2,'N')} − 1 &nbsp;·&nbsp; ④ ①+③
+      </div>
+    </div>`;
+}
+
+let genN=8, genTries=0;
+function newGenRound(){
+  const k = 2 + Math.floor(Math.random()*7);   // k = 2..8  →  N = 4..256
+  genN = Math.pow(2,k); genTries=0;
+  document.getElementById('gen-q').innerHTML =
+    `비버가 <b>${genN}마리</b>일 때, 아래 네 칸을 채우세요. (${V('N')} = ${genN} = 2<sup>${k}</sup>)`;
+  document.getElementById('gen-blanks').innerHTML = [
+    ['g1',`① 1등을 가리는 데 필요한 대결 수 <span class="note">(${V('N')} − 1)</span>`,'회'],
+    ['g2',`② 2등이 될 수 있는 후보 수 <span class="note">(${LOG(2,'N')})</span>`,'마리'],
+    ['g3',`③ 2등을 가리는 데 필요한 대결 수 <span class="note">(${LOG(2,'N')} − 1)</span>`,'회'],
+    ['g4',`④ 1등과 2등을 모두 가리는 최소 대결 수`,'회']
+  ].map(([id,label,unit])=>`
+    <div class="blank" id="b-${id}">
+      <label for="${id}">${label}</label>
+      <input id="${id}" type="number" inputmode="numeric" placeholder="${unit} 수를 입력">
+      <div class="fb" id="fb-${id}"></div>
+    </div>`).join('');
+  document.getElementById('gen-vd').innerHTML='';
+  document.getElementById('chip-gen').className='chip now';
+  document.getElementById('chip-gen').innerText='진행 중';
+}
+
+function gradeGen(){
+  const k=Math.log2(genN);
+  const ans={g1:genN-1, g2:k, g3:k-1, g4:genN+k-2};
+  const exp={g1:`${genN} − 1`, g2:`log₂${genN}`, g3:`${k} − 1`, g4:`${genN-1} + ${k-1}`};
+  let allOk=true, detail=[];
+  genTries++;
+  for(const id of ['g1','g2','g3','g4']){
+    const v=document.getElementById(id).value.trim();
+    const box=document.getElementById('b-'+id), fb=document.getElementById('fb-'+id);
+    box.classList.remove('ok','no');
+    if(v!=='' && Number(v)===ans[id]){ box.classList.add('ok'); fb.style.color='#047857'; fb.innerText='정답'; }
+    else { allOk=false; box.classList.add('no'); fb.style.color='#b42318';
+           fb.innerText = v===''? '아직 비어 있습니다' : `다시 — ${exp[id]}을 계산해 보세요`; }
+    detail.push(`${id}:${v||'-'}`);
+  }
+  const vd=document.getElementById('gen-vd');
+  logAnswer('GEN_N'+genN, `N=${genN} 네 칸 채우기`, detail.join(' '),
+            `${ans.g1}/${ans.g2}/${ans.g3}/${ans.g4}`, allOk, genTries);
+  if(allOk){
+    vd.className='verdict ok';
+    vd.innerHTML = `모두 정답입니다! &nbsp;${genN} + ${k} − 2 = <b>${genN+k-2}회</b> &nbsp;(시도 ${genTries}회)`;
+    document.getElementById('chip-gen').className='chip ok';
+    document.getElementById('chip-gen').innerText='완료';
+    fxWin();
+  }else{
+    vd.className='verdict no';
+    vd.innerHTML = `틀린 칸이 있습니다. 빨간 칸을 다시 계산해 보세요. (시도 ${genTries}회)`;
+  }
+}
+
+/* ===================== 기록 ===================== */
+function renderLog(){
+  const rows = S.records.map((r,i)=>`
+    <tr><td>${i+1}</td><td>${r.모드}</td><td style="text-align:left">${r.문항==='질문'?'💬 ':''}${esc(r.내용)}</td>
+        <td>${esc(r.선택)}</td><td>${r.정답}</td>
+        <td style="color:${r.정오==='O'?'#047857':r.정오==='X'?'#b42318':'#98a2b3'};font-weight:800">${r.정오}</td>
+        <td>${r.시도}</td><td style="font-size:.78rem">${r.시각}</td></tr>`).join('');
+  const solved = S.records.filter(r=>r.문항!=='질문');
+  const nOK = solved.filter(r=>r.정오==='O').length;
+  const nQ = S.records.length - solved.length;
+  document.getElementById('quest').innerHTML =
+    `📋 <b>${S.sid} ${S.name}</b> 님의 기록입니다. 문제 제출 ${solved.length}건 중 정답 ${nOK}건, 질문 ${nQ}건.`;
+  document.getElementById('view-log').innerHTML = `
+    <div class="panel">
+      <div class="panel-head"><h2>내 풀이 기록</h2>
+        <span class="chip ${nOK?'ok':'wait'}">정답 ${nOK} / 제출 ${solved.length}</span>
+        <span class="chip now">질문 ${nQ}</span></div>
+      <div class="row">
+        <button class="act primary" onclick="downloadCSV()">⬇️ CSV로 내려받기</button>
+        <button class="act ghost" onclick="saveNow()">💾 지금 저장하기</button>
+        <button class="act ghost" onclick="loadAll()">👩‍🏫 반 전체 기록 불러오기</button>
+      </div>
+      <div class="verdict" id="save-msg" style="min-height:20px"></div>
+      <div class="record-tbl-wrap">
+        <table><thead><tr><th>#</th><th>모드</th><th>문항 · 질문</th><th>내 답</th><th>정답</th><th>정오</th><th>시도</th><th>시각</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="8" style="color:#98a2b3;padding:18px">아직 제출한 답이 없습니다.</td></tr>'}</tbody></table>
+      </div>
+      <p class="note">기록은 선생님이 확인할 수 있도록 저장됩니다. 저장이 안 되는 환경이라면 CSV로 내려받아 제출하세요.</p>
+      <div id="all-wrap"></div>
+    </div>`;
+}
+
+async function saveNow(){
+  const ok = await Store.save();
+  const m=document.getElementById('save-msg');
+  m.className = 'verdict ' + (ok?'ok':'no');
+  m.innerText = ok ? '저장했습니다.' : '이 환경에서는 자동 저장이 안 됩니다. CSV로 내려받아 제출하세요.';
+}
+
+function downloadCSV(){
+  const cols=['학번','이름','모드','문항','내용','선택','정답','정오','시도','시각'];
+  const esc = v => `"${String(v).replace(/"/g,'""')}"`;
+  const csv = '\uFEFF' + [cols.join(',')].concat(
+    S.records.map(r=>cols.map(c=>esc(r[c]??'')).join(','))).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  a.download=`비버챌린지_${S.sid}_${S.name}.csv`;
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+async function loadAll(){
+  const wrap=document.getElementById('all-wrap');
+  wrap.innerHTML='<p class="note">불러오는 중…</p>';
+  const all = await Store.listAll();
+  if(!all){ wrap.innerHTML='<p class="note">이 환경에서는 전체 기록을 불러올 수 없습니다.</p>'; return; }
+  if(!all.length){ wrap.innerHTML='<p class="note">저장된 기록이 아직 없습니다.</p>'; return; }
+  const rows = all.map(p=>{
+    const ok=p.records.filter(r=>r.정오==='O').length;
+    return `<tr><td>${p.sid}</td><td>${p.name}</td><td>${p.records.length}</td><td>${ok}</td>
+            <td style="font-size:.78rem">${new Date(p.updatedAt).toLocaleString('ko-KR')}</td></tr>`;
+  }).join('');
+  wrap.innerHTML = `<h3 style="margin-top:18px;font-size:.95rem;color:#4338ca">반 전체 제출 현황 (${all.length}명)</h3>
+    <table><thead><tr><th>학번</th><th>이름</th><th>제출</th><th>정답</th><th>최근 저장</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+
+/* ===================== 알고리즘 만들기 ===================== */
+const CARDS = {
+  DRAW    : '비버 전체를 무작위로 둘씩 짝지어 대진표를 만든다',
+  ROUND   : '이번 라운드의 비버를 두 마리씩 짝지어 대결시키고, 이긴 비버를 다음 라운드로 올린다',
+  REPEAT  : '한 마리만 올라올 때까지 라운드를 계속 반복한다',
+  FIRST   : '마지막까지 올라온 한 마리를 1등으로 정한다',
+  COLLECT : '1등에게 직접 진 비버를 모두 모은다',
+  REGROUP : '모은 무리에서도 같은 방법으로 한 마리가 될 때까지 대결시킨다',
+  SECOND  : '마지막까지 올라온 한 마리를 2등으로 정한다',
+  ALLPLAY : '모든 비버가 서로 한 번씩 겨루게 한다'
+};
+const CARD_ORDER = ['ALLPLAY','FIRST','ROUND','DRAW','SECOND','COLLECT','REPEAT','REGROUP'];
+const ANSWER_SEQ = ['DRAW','REPEAT','FIRST','COLLECT','REGROUP','SECOND'];
+let algoSeq = [], algoTries = 0;
+
+/* ---------- 학생이 만든 절차를 실제로 실행한다 ---------- */
+function runAlgo(seq, N){
+  const names='ABCDEFGHIJKLMNOP'.slice(0,N).split('');
+  const ranks=[...Array(N).keys()].map(i=>i+1).sort(()=>Math.random()-0.5);
+  const beavers=names.map((n,i)=>({name:n, rank:ranks[i]}));
+  let pool=null;                       // 대진표를 짜기 전에는 대결할 수 없다
+  let count=0, champ=null, group=null, second=null, err=null, rnd=0;
+  const lostTo=new Map(), lostAt=new Map(), log=[];
+
+  function round(p, main){
+    if(p.length<2) return p;
+    if(main) rnd++;
+    const next=[];
+    for(let i=0;i<p.length;i+=2){
+      const a=p[i], b=p[i+1];
+      if(b===undefined){ next.push(a); continue; }
+      const w=a.rank<b.rank?a:b, l=a.rank<b.rank?b:a;
+      lostTo.set(l.name,w.name);
+      if(main) lostAt.set(l.name,rnd);
+      count++; next.push(w);
+    }
+    return next;
+  }
+  for(const id of seq){
+    if(err) break;
+    switch(id){
+      case 'DRAW':
+        if(pool){ err='대진표는 이미 짜여 있습니다.'; break; }
+        pool=[...beavers].sort(()=>Math.random()-0.5);
+        log.push(`${N}마리를 무작위로 짝지어 ${N/2}개의 첫 대결을 만듦`); break;
+      case 'ROUND':
+        if(!pool){ err='대진표가 없어 누구와 누구를 붙일지 알 수 없습니다.'; break; }
+        if(pool.length<2){ err='올라간 비버가 한 마리뿐이라 더 대결시킬 수 없습니다.'; break; }
+        pool=round(pool,true); log.push(`라운드 진행 → ${pool.length}마리가 다음 라운드로 (누적 ${count}회)`); break;
+      case 'REPEAT':
+        if(!pool){ err='대진표가 없어 누구와 누구를 붙일지 알 수 없습니다.'; break; }
+        while(pool.length>1) pool=round(pool,true);
+        log.push(`한 마리만 올라올 때까지 라운드 반복 → ${pool.length}마리 남음 (누적 ${count}회)`); break;
+      case 'FIRST':
+        if(!pool){ err='아직 대결을 한 번도 하지 않아 1등을 정할 수 없습니다.'; break; }
+        if(pool.length!==1){ err=`아직 ${pool.length}마리가 올라와 있어 1등을 정할 수 없습니다.`; break; }
+        champ=pool[0]; log.push(`1등 확정: 비버 ${champ.name}`); break;
+      case 'COLLECT':
+        if(!champ){ err='1등이 정해지지 않아 1등에게 진 비버를 모을 수 없습니다.'; break; }
+        group=beavers.filter(b=>lostTo.get(b.name)===champ.name);
+        log.push(`1등에게 진 비버 ${group.length}마리를 모음`); break;
+      case 'ALLPLAY':
+        count+=N*(N-1)/2; log.push(`모든 쌍이 한 번씩 대결 → ${N*(N-1)/2}회 추가 (누적 ${count}회)`); break;
+      case 'REGROUP':
+        if(!group||!group.length){ err='모아 둔 무리가 없어 다시 대결시킬 수 없습니다.'; break; }
+        { let g=[...group]; while(g.length>1) g=round(g,false); group=g; }
+        log.push(`모은 무리에서 한 마리가 될 때까지 대결 (누적 ${count}회)`); break;
+      case 'SECOND':
+        if(!group||group.length!==1){ err='한 마리로 좁혀지지 않아 2등을 정할 수 없습니다.'; break; }
+        second=group[0]; log.push(`2등 확정: 비버 ${second.name}`); break;
+    }
+  }
+  const ok = !err && champ && second && champ.rank===1 && second.rank===2;
+  return {ok, err, count, champ, second, log, beavers};
+}
+
+/* ---------- 화면 ---------- */
+function renderAlgo(){
+  document.getElementById('quest').innerHTML =
+    `❓ <b>[알고리즘 만들기]</b> 지금까지 손으로 하던 과정을 <b>명령의 순서</b>로 바꿔 봅시다. ` +
+    `누가 실행해도 같은 결과가 나오도록 명령을 골라 차례대로 놓으면, 그것이 알고리즘입니다.`;
+  document.getElementById('view-algo').innerHTML = `
+    <div class="panel">
+      <div class="panel-head"><h2>🧩 명령을 골라 순서대로 놓기</h2>
+        <span class="chip now" id="chip-algo">진행 중</span></div>
+      <p class="note" style="margin-top:0;margin-bottom:14px">
+        필요한 명령만 고르면 됩니다. 쓰지 않아도 되는 명령도 섞여 있습니다.
+        순서가 완성되면 컴퓨터가 그 명령대로 <b>실제로 대회를 진행</b>해서 결과를 알려 줍니다.</p>
+      <div class="algo-grid">
+        <div class="algo-box">
+          <h3>사용할 수 있는 명령</h3>
+          <div id="algo-palette"></div>
+        </div>
+        <div class="algo-box">
+          <h3>내 알고리즘</h3>
+          <div id="algo-seq"></div>
+        </div>
+      </div>
+      <div class="row" style="margin-top:14px">
+        <button class="act hintb" onclick="toggle('algo-hint')">💡 힌트</button>
+        <button class="act ghost" onclick="clearAlgo()">↺ 비우기</button>
+        <button class="act checkb algo-run" id="algo-run" onclick="checkAlgo()">▶ 실행해서 확인하기</button>
+      </div>
+      <div class="box hint" id="algo-hint"><h4>💡 힌트</h4>
+        ① 대결을 시키려면 <b>누구와 누구가 붙는지</b>부터 정해져 있어야 합니다.<br>
+        ② 1등을 어떻게 가렸는지 떠올려 보세요. 라운드를 <b>몇 번</b> 반복해야 하는지가 관건입니다.<br>
+        ③ 1등이 정해진 다음, 2등이 될 수 있는 비버는 누구였나요?<br>
+        ④ 그 무리에서 2등을 뽑는 방법은 1등을 뽑던 방법과 같습니다.
+      </div>
+      <div id="algo-out"></div>
+      <div class="pseudo" id="algo-pseudo"></div>
+    </div>`;
+  renderPalette(); renderSeq();
+}
+
+function renderPalette(){
+  document.getElementById('algo-palette').innerHTML = CARD_ORDER.map(id=>{
+    const used = algoSeq.includes(id);
+    return `<button class="cardbtn" ${used?'disabled':''} onclick="addCard('${id}')">${CARDS[id]}</button>`;
+  }).join('');
+}
+function renderSeq(){
+  const el=document.getElementById('algo-seq');
+  if(!algoSeq.length){ el.innerHTML='<div class="seq-empty">왼쪽에서 명령을 눌러 순서를 만들어 보세요</div>'; return; }
+  el.innerHTML = algoSeq.map((id,i)=>`
+    <div class="seq-item">
+      <span class="no">${i+1}</span>
+      <span class="txt">${CARDS[id]}</span>
+      <button class="mv" onclick="moveCard(${i},-1)" title="위로">▲</button>
+      <button class="mv" onclick="moveCard(${i},1)" title="아래로">▼</button>
+      <button class="mv" onclick="removeCard(${i})" title="빼기">✕</button>
+    </div>`).join('');
+}
+function addCard(id){ algoSeq.push(id); renderPalette(); renderSeq(); staleResult(); }
+function removeCard(i){ algoSeq.splice(i,1); renderPalette(); renderSeq(); staleResult(); }
+function moveCard(i,d){
+  const j=i+d; if(j<0||j>=algoSeq.length) return;
+  [algoSeq[i],algoSeq[j]]=[algoSeq[j],algoSeq[i]];
+  renderSeq(); staleResult();
+}
+/* 순서를 고치면 앞선 판정은 더 이상 유효하지 않다 */
+function staleResult(){
+  const out=document.getElementById('algo-out');
+  if(out && out.innerHTML.trim()){
+    out.innerHTML='<div class="verdictbox warn">순서가 바뀌었습니다. '
+                 +'[▶ 실행해서 확인하기]를 다시 눌러 주세요.</div>';
+  }
+  document.getElementById('algo-pseudo').style.display='none';
+}
+function clearAlgo(){
+  algoSeq=[]; renderPalette(); renderSeq();
+  document.getElementById('algo-out').innerHTML='';
+  document.getElementById('algo-pseudo').style.display='none';
+}
+
+/* ---------- 실행 판정 : 한 판이면 결과가 확정된다 ---------- */
+function checkAlgo(){
+  const out=document.getElementById('algo-out');
+  const btn=document.getElementById('algo-run');
+  if(algoSeq.length<2){
+    out.innerHTML='<div class="verdictbox warn">명령을 두 개 이상 놓아야 실행할 수 있습니다.</div>';
+    out.scrollIntoView({behavior:'smooth', block:'center'});
+    return; }
+  algoTries++;
+  document.getElementById('algo-pseudo').style.display='none';   // 이전 결과 정리
+  if(btn){ btn.innerText='▶ 실행 중…'; btn.classList.add('busy'); }
+
+  const r8=runAlgo(algoSeq,8), r16=runAlgo(algoSeq,16);
+  const ok = r8.ok && r16.ok;
+  const minimal = ok && r8.count===9 && r16.count===18;
+  const truth=[...r8.beavers].sort((a,b)=>a.rank-b.rank);
+
+  /* 실행 과정 */
+  let log='<div class="runlog"><div class="dim">— 8명 대회로 실행 —</div>'
+        + r8.log.map(l=>`<div>› ${l}</div>`).join('');
+  if(r8.err) log+=`<div class="bad">✕ 여기서 멈췄습니다 — ${r8.err}</div>`;
+  else log+=`<div class="dim">실제 순위 → 1등 ${truth[0].name}, 2등 ${truth[1].name}</div>`;
+  log+='</div>';
+
+  /* 판정 */
+  let cls, msg;
+  if(!ok){
+    cls='bad';
+    msg=`<b>✗ 이 절차로는 답을 낼 수 없습니다.</b><br>${r8.err||'1등 또는 2등을 잘못 찾았습니다.'}<br>
+         빠진 명령이 없는지, 순서가 뒤바뀌지는 않았는지 살펴보세요.`;
+  }else if(!minimal){
+    cls='warn';
+    msg=`<b>△ 답은 맞지만 대결이 너무 많습니다.</b><br>
+         8명 대회 ${r8.count}회 (최소 9회) · 16명 대회 ${r16.count}회 (최소 18회)<br>
+         꼭 필요하지 않은 대결을 시키는 명령이 있는지 찾아보세요.`;
+  }else{
+    cls='good';
+    msg=`<b>✓ 완성했습니다.</b><br>
+         8명 대회 ${r8.count}회 · 16명 대회 ${r16.count}회로, 둘 다 최소 대결 수와 같습니다.<br>
+         손으로 하던 과정이 이제 <b>누가 실행해도 같은 결과를 내는 절차</b>가 되었습니다.`;
+  }
+  out.innerHTML=log+`<div class="verdictbox ${cls}">${msg}</div>`;
+  if(btn){ btn.innerText='▶ 실행해서 확인하기'; btn.classList.remove('busy'); }
+  out.scrollIntoView({behavior:'smooth', block:'center'});   // 결과가 보이도록
+
+  logAnswer('ALGO','토너먼트 알고리즘 조립', algoSeq.join('→'), ANSWER_SEQ.join('→'), minimal, algoTries);
+  const chip=document.getElementById('chip-algo');
+  chip.className='chip '+(minimal?'ok':'now'); chip.innerText=minimal?'완료':'진행 중';
+  if(minimal){ showPseudo(); fxWin(); }
+}
+
+function showPseudo(){
+  const el=document.getElementById('algo-pseudo');
+  el.style.display='block';
+  el.innerHTML=
+`<span class="cm">// 내가 만든 절차를 기호로 옮기면</span>
+올라간무리 ← 비버 <span class="kw">N</span>마리를 무작위로 짝지어 배치 <span class="cm">// 대진표</span>
+<span class="kw">반복</span> (올라간무리의 크기 > 1)
+&nbsp;&nbsp;&nbsp;&nbsp;올라간무리 ← 짝지어 대결시킨 뒤 이긴 비버들
+1등 ← 올라간무리의 하나뿐인 비버 <span class="cm">// 대결 N − 1회</span>
+
+후보 ← 1등에게 직접 진 비버들 <span class="cm">// 후보 log₂N마리</span>
+<span class="kw">반복</span> (후보의 크기 > 1)
+&nbsp;&nbsp;&nbsp;&nbsp;후보 ← 짝지어 대결시킨 뒤 이긴 비버들
+2등 ← 후보의 하나뿐인 비버 <span class="cm">// 대결 log₂N − 1회</span>
+
+<span class="cm">// 합계 = N + log₂N − 2</span>`;
+  el.scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+/* ===================== 질문란 ===================== */
+const esc = s => String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+const QA = [
+{ t:'왜 라운드 수가 '+LOG(2,'N')+'인가요?',
+  strong:['라운드수','몇라운드','절반','반으로'],
+  keys:['라운드','로그가나오','왜로그','log2n','로그2'],
+  html:`한 라운드가 끝나면 남는 비버가 <b>정확히 절반</b>이 되기 때문입니다. 한 경기에 두 마리가 들어가 한 마리만 올라가니까요.
+    <div class="eg">16 → 8 → 4 → 2 → 1 &nbsp;(4번)</div>
+    <ul>
+      <li>${V('r')}라운드를 치르면 남는 수는 ${V('N')} / 2<sup>${V('r')}</sup>마리</li>
+      <li>우승자 1마리만 남으면 끝이므로 ${V('N')} / 2<sup>${V('r')}</sup> = 1</li>
+      <li>정리하면 2<sup>${V('r')}</sup> = ${V('N')}, 즉 ${V('r')} = ${LOG(2,'N')}</li>
+    </ul>
+    마지막 줄이 바로 로그의 정의입니다. <b>2를 몇 번 곱해야 ${V('N')}이 되는가</b>를 묻는 것이죠.
+    매 라운드 2로 나누기 때문에 밑이 2이고, 처음 인원 ${V('N')}이 진수가 됩니다.` },
+
+{ t:'1등 가리기가 왜 '+V('N')+' − 1회인가요?',
+  strong:['n-1','n−1','탈락자','1등가리'],
+  keys:['탈락','한마리씩','왜7번','왜15번','7회','15회'],
+  html:`대결이 한 번 끝날 때마다 탈락하는 비버는 <b>반드시 정확히 한 마리</b>입니다.
+    ${V('N')}마리 중 1등 한 마리만 남기려면 나머지 ${V('N')} − 1마리를 모두 탈락시켜야 하므로,
+    대결도 정확히 ${V('N')} − 1번 필요합니다.
+    <div class="eg">8마리 → 7마리 탈락 → 7회 &nbsp;/&nbsp; 16마리 → 15마리 탈락 → 15회</div>
+    이 논리는 대진표를 어떻게 짜든, 부전승이 있든 없든 똑같이 성립합니다. 경기 수와 탈락자 수를 짝지어 세는 것이 핵심이에요.` },
+
+{ t:'2등이 왜 1등에게 진 비버 중에만 있나요?',
+  strong:['후보','2등이될','진비버'],
+  keys:['2등후보','패자','왜3마리','왜4마리','2등은'],
+  html:`어떤 비버 X가 <b>1등이 아닌 다른 비버 Y</b>에게 졌다고 해 봅시다. 그러면 Y는 X보다 빠르고, 1등은 Y보다 빠릅니다.
+    X보다 빠른 비버가 최소 두 마리 있는 셈이니 X는 2등이 될 수 없습니다.
+    <div class="eg">그래서 2등 후보 = 1등에게 <b>직접</b> 진 비버들뿐</div>
+    1등은 1라운드부터 결승까지 매 라운드 한 경기씩, 모두 ${LOG(2,'N')}경기를 치릅니다.
+    상대는 매번 다른 비버이므로 후보도 정확히 ${LOG(2,'N')}마리입니다.` },
+
+{ t:'로그의 밑과 진수가 무엇인가요?',
+  strong:['밑','진수','로그란','로그가뭐','로그뜻'],
+  keys:['로그의미','로그읽'],
+  html:`${LOG(2,'N')} = ${V('k')}는 <b>2<sup>${V('k')}</sup> = ${V('N')}</b>과 완전히 같은 뜻입니다.
+    <ul>
+      <li><b style="color:#b42318">2</b> — 밑(base). 몇 씩 곱해 나가는지</li>
+      <li><span class="mth">N</span> — 진수(argument). 도달하려는 수</li>
+      <li><span class="mth">k</span> — 로그값. 몇 번 곱했는지</li>
+    </ul>
+    <div class="eg">${LOG(2,8,true)} = 3 ⟺ 2³ = 8 &nbsp;·&nbsp; ${LOG(2,64,true)} = 6 ⟺ 2⁶ = 64</div>
+    이 대회에서는 라운드마다 인원이 2로 나뉘므로 밑이 2, 처음 인원이 진수가 됩니다.` },
+
+{ t:LOG(2,'N')+' 값은 어떻게 계산하나요?',
+  strong:['몇번곱','2의몇제곱','계산법'],
+  keys:['어떻게계산','log2 64','값구하'],
+  html:`<b>2를 몇 번 곱해야 진수가 되는지</b> 세면 됩니다.
+    <div class="eg">2, 4, 8, 16, 32, 64, 128, 256<br>1, 2, 3, &nbsp;4, &nbsp;5, &nbsp;6, &nbsp;&nbsp;7, &nbsp;&nbsp;8</div>
+    거꾸로 2로 계속 나누면서 1이 될 때까지의 횟수를 세도 같습니다. 64 → 32 → 16 → 8 → 4 → 2 → 1이므로 ${LOG(2,64,true)} = 6.` },
+
+{ t:'비버가 2의 거듭제곱이 아니면 어떻게 되나요?',
+  strong:['부전승','거듭제곱','홀수','안떨어','나누어떨어'],
+  keys:['12명','10명','2의거듭'],
+  html:`부전승(경기 없이 올라가는 자리)이 생깁니다. 그래도 큰 틀은 그대로예요.
+    <ul>
+      <li>1등 가리기는 여전히 ${V('N')} − 1회 — 탈락자 논리는 인원과 무관하니까요</li>
+      <li>라운드 수는 ⌈${LOG(2,'N')}⌉ (${LOG(2,'N')}을 올림한 값)</li>
+      <li>최소 대결 수 = ${V('N')} + ⌈${LOG(2,'N')}⌉ − 2</li>
+    </ul>
+    <div class="eg">12마리라면 ⌈${LOG(2,12,true)}⌉ = 4이므로 11 + 3 = <b>14회</b></div>
+    수업에서 ${V('N')} = 2<sup>${V('k')}</sup>로 두는 이유는 올림 기호 없이 규칙이 깔끔하게 보이기 때문입니다.` },
+
+{ t:'정말 이보다 적게는 못 하나요?',
+  strong:['최소','더적게','줄일수','더줄','최선'],
+  keys:['증명','정말최소'],
+  html:`1등 쪽은 확실합니다. 탈락자가 ${V('N')} − 1마리 필요하니 어떤 방법도 ${V('N')} − 1회 밑으로 내려갈 수 없습니다.
+    <p style="margin-top:6px">2등 쪽도 ${LOG(2,'N')} − 1회가 최선임이 증명되어 있습니다(Kislitsyn, 1964). 직관은 이렇습니다.</p>
+    <div class="eg">한 번 이길 때마다 '내가 이긴 무리'의 크기는 <b>많아야 2배</b>가 된다.
+      ${V('N')}마리 전체를 누르려면 적어도 ${LOG(2,'N')}번은 이겨야 한다.</div>
+    즉 1등의 경기 수를 ${LOG(2,'N')}보다 줄일 수는 없고, 그만큼 후보도 줄지 않습니다.` },
+
+{ t:'모두가 서로 대결하면(리그전) 몇 번인가요?',
+  strong:['리그','서로한번','모두와','전부대결'],
+  keys:['풀리그','조합','nc2'],
+  html:`${V('N')}마리 중 2마리를 뽑는 경우의 수이므로 <span class="mth">N</span>(<span class="mth">N</span> − 1) / 2회입니다.
+    <div class="eg">8마리: 28회 ↔ 토너먼트 방식 9회<br>16마리: 120회 ↔ 토너먼트 방식 18회</div>
+    리그전은 전체 순위를 모두 알 수 있지만 훨씬 비쌉니다.
+    <b>필요한 정보만 얻도록 설계하는 것</b>이 이 문제의 핵심이고, 컴퓨팅 사고력에서 말하는 효율성이기도 합니다.` },
+
+{ t:'진짜 2등이 1라운드에서 탈락하면요?',
+  strong:['대진운','억울','예선탈락','불공평','하필','운이나','운이','바로만나','만나면'],
+  keys:['1라운드에서','일찍만나'],
+  html:`충분히 일어납니다. 실제 2등이 1라운드에서 하필 1등을 만나면 바로 떨어지죠.
+    바로 그 때문에 <b>1등에게 진 비버를 모두 다시 모아</b> 대결시키는 것입니다.
+    <div class="eg">진짜 2등은 1등에게만 질 수 있으므로, 반드시 이 후보 무리 안에 있다</div>
+    그래서 이 방법은 대진운과 상관없이 언제나 진짜 2등을 찾아냅니다.
+    게임을 끝까지 진행한 뒤 마지막에 공개되는 '숨은 실력 순서'로 직접 확인해 보세요.
+    (단, 실력이 일정해서 항상 빠른 쪽이 이긴다고 전제합니다.)` },
+
+{ t:'3등까지 가리려면 어떻게 하나요?',
+  strong:['3등','3위','세번째'],
+  keys:['3등까지','다음순위'],
+  html:`같은 아이디어를 한 번 더 씁니다. 3등이 될 수 있는 비버는 <b>1등 또는 2등에게 직접 진 비버</b>뿐입니다.
+    그 외의 비버는 자기보다 빠른 비버가 이미 셋 이상 있으니까요.
+    <p style="margin-top:6px">다만 2등을 가리는 과정에서 이미 치른 경기가 있어서, 그 결과를 얼마나 재활용하느냐에 따라 횟수가 달라집니다.
+    순위를 깊이 가릴수록 계산이 복잡해지고, 이는 '선택 문제(selection problem)'라는 이름으로 지금도 연구되는 주제입니다.</p>` },
+
+{ t:'알고리즘이 정확히 무엇인가요?',
+  strong:['알고리즘이뭐','알고리즘이란','알고리즘의뜻','알고리즘뜻'],
+  keys:['알고리즘'],
+  html:`<b>누가 실행해도 같은 결과가 나오는, 끝이 있는 명령의 순서</b>입니다. 세 가지를 갖춰야 해요.
+    <ul>
+      <li>애매한 표현이 없을 것 — '적당히 빠른 비버'는 명령이 될 수 없습니다</li>
+      <li>반드시 끝날 것 — '한 마리가 남을 때까지'처럼 멈추는 조건이 있어야 합니다</li>
+      <li>언제나 옳을 것 — 운 좋은 한 판이 아니라 모든 경우에 맞아야 합니다</li>
+    </ul>
+    4단계에서 명령 카드를 순서대로 놓는 활동이 바로 이 세 조건을 갖춘 절차를 만드는 일입니다.` },
+
+{ t:'만든 절차가 맞는지 어떻게 알 수 있나요?',
+  strong:['맞는지','확인하나','검증','제대로된지','옳은지'],
+  keys:['실행','판정'],
+  html:`<b>직접 실행해 보면 됩니다.</b> [실행해서 확인하기]를 누르면 컴퓨터가 여러분이 놓은 명령을
+    그대로 따라 8명 대회와 16명 대회를 진행하고, 결과를 알려 줍니다.
+    <ul>
+      <li>명령이 빠졌거나 순서가 뒤바뀌면 <b>그 자리에서 멈추고</b> 이유를 알려 줍니다</li>
+      <li>답은 맞지만 대결이 필요 이상으로 많으면 그 점을 짚어 줍니다</li>
+      <li>정확하면서 대결 수도 최소이면 완성입니다</li>
+    </ul>
+    알고리즘은 애매한 구석이 없어야 하므로, 같은 명령을 실행하면 언제나 같은 판정이 나옵니다.` },
+
+{ t:'전체 공식을 다시 정리해 주세요.',
+  strong:['공식','정리해','최종정리','요약'],
+  keys:['총대결','전체대결','n+log'],
+  html:`<div class="eg" style="font-size:1rem;text-align:center;line-height:2">
+      (${V('N')} − 1) + (${LOG(2,'N')} − 1) = <b>${V('N')} + ${LOG(2,'N')} − 2</b></div>
+    <ul>
+      <li>앞부분 ${V('N')} − 1 : 1등 가리기(탈락자 수)</li>
+      <li>뒷부분 ${LOG(2,'N')} − 1 : 후보 ${LOG(2,'N')}마리로 2등 가리기</li>
+    </ul>
+    <div class="eg">8마리 9회 · 16마리 18회 · 64마리 68회 · 256마리 262회</div>` }
+];
+
+function renderQAChips(){
+  document.getElementById('qa-chips').innerHTML =
+    QA.slice(0,6).map((item,i)=>`<button class="qa-chip" onclick="askPreset(${i})">${item.t}</button>`).join('') +
+    `<button class="qa-chip" onclick="showAllQ()" style="border-style:dashed">＋ 다른 질문 목록</button>`;
+}
+function showAllQ(){
+  document.getElementById('qa-chips').innerHTML =
+    QA.map((item,i)=>`<button class="qa-chip" onclick="askPreset(${i})">${item.t}</button>`).join('');
+}
+function askPreset(i){ addBubble('me', QA[i].t); showAnswer(QA[i], QA[i].t); }
+
+/* 질문 글에서 가장 잘 맞는 답을 찾습니다 */
+function matchQA(text){
+  const t = text.toLowerCase().replace(/\s+/g,'');
+  let best=null, score=0;
+  for(const item of QA){
+    let s=0;
+    for(const k of (item.strong||[])) if(t.includes(k.replace(/\s+/g,''))) s+=3;   // 그 주제에만 쓰이는 말
+    for(const k of item.keys)          if(t.includes(k.replace(/\s+/g,''))) s+=1;   // 거들어 주는 말
+    if(s>score){ score=s; best=item; }
+  }
+  return score>0 ? best : null;
+}
+
+function addBubble(kind, html){
+  const th=document.getElementById('qa-thread');
+  const d=document.createElement('div');
+  d.className='bub '+kind;
+  d.innerHTML=html;
+  th.appendChild(d);
+  th.scrollTop=th.scrollHeight;
+  return d;
+}
+function showAnswer(item, asked){
+  addBubble('ans', `<span class="src">답변집</span><h4>${item.t}</h4>${item.html}`);
+  logQuestion(asked, '답변집: '+item.t.replace(/<[^>]+>/g,''));
+}
+
+async function ask(){
+  const box=document.getElementById('qa-in');
+  const q=box.value.trim();
+  if(!q) return;
+  box.value='';
+  addBubble('me', esc(q));
+  const hit=matchQA(q);
+  if(hit){ showAnswer(hit, q); return; }
+
+  const useAI=document.getElementById('qa-ai-toggle').checked;
+  if(!useAI){
+    addBubble('ans', `<span class="src none">답변집에 없음</span>
+      아직 준비된 답이 없는 질문이에요. 질문은 기록에 저장되니 선생님이 확인할 수 있습니다.<br>
+      위쪽 질문 목록에서 비슷한 것을 눌러 보거나, 🤖 체크박스를 켜고 다시 물어보세요.`);
+    logQuestion(q, '답변집에 없음');
+    return;
+  }
+  const waiting=addBubble('ans', `<span class="src ai">AI 도우미</span><span class="dots">생각하는 중</span>`);
+  try{
+    const ans=await askAI(q);
+    waiting.innerHTML=`<span class="src ai">AI 도우미</span>${esc(ans).replace(/\n/g,'<br>')}`;
+    logQuestion(q, 'AI 답변');
+  }catch(e){
+    waiting.innerHTML=`<span class="src none">연결 실패</span>
+      AI 도우미에 연결하지 못했습니다. 인터넷이 차단된 환경일 수 있어요.
+      위 질문 목록의 답변집은 인터넷 없이도 그대로 쓸 수 있습니다.`;
+    logQuestion(q, 'AI 연결 실패');
+  }
+  document.getElementById('qa-thread').scrollTop=document.getElementById('qa-thread').scrollHeight;
+}
+
+async function askAI(question){
+  const where = S.tab==='gen' ? 'N명 일반화 모드' : S.N+'명 대회 대진표';
+  const prompt =
+`너는 고등학교 1학년 수학 수업의 조교야. 학생이 아래 문제를 풀고 있어.
+
+[문제 맥락]
+비버 N마리(N = 2^k)가 토너먼트를 한다. 항상 빠른 비버가 이긴다.
+1등을 가리는 데 N-1회, 2등 후보는 1등에게 진 log2(N)마리, 2등을 가리는 데 log2(N)-1회.
+따라서 최소 대결 수는 N + log2(N) - 2.
+학생이 지금 보고 있는 화면: ${where}
+
+[답변 규칙]
+- 한국어 존댓말, 4문장 이내로 짧게.
+- 고1이 이해할 수 있는 말로. 어려운 용어는 풀어서.
+- 필요하면 8마리 또는 16마리 예를 들 것.
+- 마크다운 기호(**, #, - 등)는 쓰지 말고 평범한 문장으로.
+- 이 문제와 관련 없는 질문이면, 수업 내용으로 돌아오도록 한 문장으로 안내할 것.
+
+[학생 질문]
+${question}`;
+  const res=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-6', max_tokens:1000, messages:[{role:'user',content:prompt}]})
+  });
+  if(!res.ok) throw new Error('API '+res.status);
+  const data=await res.json();
+  const text=data.content.filter(c=>c.type==='text').map(c=>c.text).join('\n').trim();
+  if(!text) throw new Error('empty');
+  return text;
+}
+
+function logQuestion(q, how){
+  S.records.push({
+    학번:S.sid, 이름:S.name, 모드:modeName(),
+    문항:'질문', 내용:q, 선택:how, 정답:'', 정오:'-', 시도:'', 시각:new Date().toLocaleString('ko-KR')
+  });
+  Store.save();
+  if(document.getElementById('view-log').style.display==='block') renderLog();
+}
+
+/* ---------- 정답 효과 ---------- */
+function fxWin(){
+  for(let i=0;i<4;i++) setTimeout(()=>{
+    const el=document.createElement('div'); el.className='fx-plus'; el.innerText='+1';
+    el.style.left=(20+Math.random()*60)+'vw'; document.body.appendChild(el);
+    setTimeout(()=>el.remove(),1200);
+  }, i*140);
+  const colors=['#4338ca','#10b981','#f59e0b','#ec4899'];
+  for(let i=0;i<30;i++){
+    const c=document.createElement('div'); c.className='fx-conf';
+    c.style.background=colors[i%colors.length]; c.style.left='50vw'; c.style.top='32vh';
+    c.style.setProperty('--dx',(Math.random()*360-180)+'px');
+    c.style.setProperty('--dy',(Math.random()*360-180)+'px');
+    document.body.appendChild(c); setTimeout(()=>c.remove(),1100);
+  }
+}
+
+/* ---------- 시작 ---------- */
+document.getElementById('qa-in').addEventListener('keydown', e=>{ if(e.key==='Enter') ask(); });
+renderQAChips();
+resetAll();
+</script>
+</body>
+</html>
