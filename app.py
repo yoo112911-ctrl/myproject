@@ -1,5 +1,15 @@
+import os
 import sqlite3
+
 import streamlit as st
+
+# ---------------------------------------------------------
+# 0. 경로 설정 (★수정 포인트★)
+# GitHub/Streamlit Cloud에서는 실행 위치가 로컬과 다를 수 있으므로,
+# 항상 "이 파일이 있는 폴더"를 기준으로 절대경로를 만든다.
+# ---------------------------------------------------------
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, "myproject.db")
 
 # 1. 페이지 설정 (반드시 최상단)
 st.set_page_config(layout="wide", page_title="국어과 AIDT")
@@ -7,7 +17,7 @@ st.set_page_config(layout="wide", page_title="국어과 AIDT")
 
 # 2. DB 초기화 함수 (myproject.db)
 def init_db():
-  conn = sqlite3.connect("myproject.db")
+  conn = sqlite3.connect(DB_PATH)
   c = conn.cursor()
 
   # users 테이블 (회원 정보)
@@ -68,7 +78,7 @@ else:
     )
 
     if st.sidebar.button("로그인"):
-      conn = sqlite3.connect("myproject.db")
+      conn = sqlite3.connect(DB_PATH)
       c = conn.cursor()
       c.execute(
           "SELECT * FROM users WHERE userid = ? AND password = ?",
@@ -94,7 +104,7 @@ else:
     if st.sidebar.button("가입하기"):
       if new_id and new_pw:
         try:
-          conn = sqlite3.connect("myproject.db")
+          conn = sqlite3.connect(DB_PATH)
           c = conn.cursor()
           c.execute(
               "INSERT INTO users (userid, password) VALUES (?, ?)",
@@ -139,8 +149,15 @@ col1, col2 = st.columns((4, 1))
 with col1:
   with st.expander("2차시_동영상"):
     st.title("동영상 시청......")
-    img_path = "./img/image.png"
-    st.image(img_path)
+    # ★수정: 절대경로로 변경
+    img_path = os.path.join(BASE_DIR, "img", "image.png")
+    if os.path.exists(img_path):
+      st.image(img_path)
+    else:
+      st.warning(
+          f"⚠️ 이미지를 찾을 수 없습니다: img/image.png 가 저장소의 "
+          "img 폴더에 있는지 확인해주세요."
+      )
 
 with col2:
   with st.expander("Tips..."):
@@ -169,8 +186,15 @@ with col1:
           3. **모델(Model)**: 패턴을 학습하여 생성된 알고리즘 결과물
         """)
 
-    concept_img = "./img/image.png"
-    st.image(concept_img)
+    # ★수정: 절대경로로 변경 (같은 이미지를 다시 사용)
+    concept_img = os.path.join(BASE_DIR, "img", "image.png")
+    if os.path.exists(concept_img):
+      st.image(concept_img)
+    else:
+      st.warning(
+          f"⚠️ 이미지를 찾을 수 없습니다: img/image.png 가 저장소의 "
+          "img 폴더에 있는지 확인해주세요."
+      )
 
 with col2:
   with st.expander("Tips..."):
