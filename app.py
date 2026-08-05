@@ -15,6 +15,15 @@ DB_PATH = os.path.join(BASE_DIR, "myproject.db")
 st.set_page_config(layout="wide", page_title="국어과 AIDT")
 
 
+st.markdown("""
+<style>
+    div[data-testid="stSidebarNav"] a[href*="토너먼트웹엡"] span {
+        color: #0000FF !important;
+        font-weight: 700 !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 # 2. DB 초기화 함수 (myproject.db)
 def init_db():
   conn = sqlite3.connect(DB_PATH)
